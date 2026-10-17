@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="从文本和文档生成可编辑 PPTX，人工调整后再添加原生 PowerPoint 动画。">
+  <title>llm-pptx · 演示工作台</title>
+  <link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="llm-pptx 首页"><span class="brand-symbol" aria-hidden="true">P<span>↗</span></span><span>llm-pptx<small>演示工作台</small></span></a>
+    <div class="header-right"><span class="local-label">文件在本机处理</span><button id="config-button" class="model-status" type="button" aria-expanded="false"><span class="status-dot"></span><span id="model-label">读取模型配置</span></button></div>
+  </header>
+  <aside id="config-panel" class="config-panel" hidden><strong>模型连接</strong><p id="config-description"></p><p>在项目 <code>.env</code> 中设置 <code>LLM_BASE_URL</code>、<code>LLM_MODEL</code> 和 <code>LLM_API_KEY</code>，然后重启服务。通过 <code>LLM_WIRE_API</code> 选择 Responses 或 Chat Completions 兼容接口，AI 编排使用流式输出。</p><p>AI 编排会将文本发送给配置的模型服务。上传文件不会保存到服务器磁盘。</p></aside>
+  <main>
+    <div class="workspace-heading"><div><h1>把想法做成演示</h1><p>先生成可编辑的页面，调整满意后，再编排随讲解推进的原生动画。</p></div><span class="project-tag">本地工作区</span></div>
+    <nav class="workflow-tabs" role="tablist" aria-label="制作阶段">
+      <button id="tab-static" class="workflow-tab active" role="tab" type="button" aria-selected="true" aria-controls="panel-static"><span class="step-number">1</span><span>生成静态 PPTX<small>文本 / 文档 · 可编辑导出</small></span></button>
+      <span class="step-connector" aria-hidden="true"></span>
+      <button id="tab-motion" class="workflow-tab" role="tab" type="button" aria-selected="false" aria-controls="panel-motion"><span class="step-number">2</span><span>转换动态 PPTX<small>页内动画 · 手动推进</small></span></button>
+    </nav>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section role="tabpanel" id="panel-static" aria-labelledby="tab-static" class="workbench">
+      <div class="source-panel">
+        <div class="panel-title"><h2>演示材料</h2><button id="sample-button" type="button" class="text-button">填入示例</button></div>
+        <label for="deck-title">演示标题 <span class="optional">可选</span></label>
+        <input id="deck-title" maxlength="64" placeholder="例如：静态生成与动画加工方案">
+        <div class="source-label"><label for="source-text">主题或正文</label><label class="upload-link" for="document-input">导入文档<input id="document-input" type="file" accept=".txt,.md,.docx,.pdf" hidden></label></div>
+        <textarea id="source-text" maxlength="100000" spellcheck="false" placeholder="输入一个主题、一段材料，或导入 TXT、Markdown、Word、PDF。&#10;&#10;用 ## 标题划分页，用 - 列出重点。"></textarea>
+        <div class="field-hint"><span id="source-count">0 字符</span><span>PDF 需含可提取文字</span></div>
+        <div class="options-row"><div><label for="generation-mode">内容编排</label><select id="generation-mode"><option value="source">按原文分页</option><option id="ai-option" value="ai" disabled>AI 编排（未配置）</option></select></div><div id="slide-count-field"><label for="slide-count">目标页数 <span class="optional">可选</span></label><input id="slide-count" type="number" min="1" max="30" placeholder="留空自动决定"></div></div>
+        <p id="mode-description" class="help-text">按标题与段落分页，保留原文。长段落会自动拆分。</p>
+        <button id="plan-button" class="button primary full" type="button">生成页面草稿 <span aria-hidden="true">↗</span></button>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-toolbar"><div><h2>页面预览</h2><span id="deck-meta">尚未生成</span></div><div class="preview-actions"><button id="layout-sample-button" class="text-button" type="button">查看版式示例</button><label for="theme-select" class="sr-only">演示主题</label><select id="theme-select"><option value="studio">蓝调工作室</option><option value="ink">纸白墨绿</option><option value="night">夜蓝</option></select><button id="export-button" class="button compact" type="button" disabled>下载静态 PPTX</button></div></div>
+        <section id="generation-stream" class="generation-stream" aria-label="实时生成内容" hidden><div class="stream-toolbar"><p id="stream-status" role="status" aria-live="polite"></p><button id="cancel-generation" class="text-button" type="button" disabled>停止生成</button></div><div id="stream-slides" class="stream-slides"></div></section>
+        <div id="preview-empty" class="preview-empty"><div class="sheet-stack" aria-hidden="true"><div></div><div></div><div><span>你的下一场演示</span><i></i><i></i></div></div><h3>内容有了，页面就有了起点</h3><p>在左侧输入材料，生成后可逐页修改文字。<br>导出后，继续在 PowerPoint 或 WPS 中调整排版。</p></div>
+        <div id="deck-workspace" class="deck-workspace" hidden><div class="slide-navigation"><span>页面</span><ol id="slide-list"></ol></div><div class="canvas-area"><article id="slide-preview" class="slide-preview studio" aria-label="当前幻灯片内容预览"></article><p class="preview-caption">内容预览 · 最终排版以导出的 PPTX 为准</p><details class="slide-editor" open><summary>编辑当前页文字</summary><div id="slide-fields"></div></details></div></div>
+        <div id="handoff" class="handoff" hidden><span class="handoff-icon" aria-hidden="true">✓</span><p><strong>静态文件已下载</strong>在 PowerPoint 或 WPS 中调整并保存，再上传到下一阶段。</p><button id="go-motion" type="button" class="text-button">进入动画加工</button></div>
+      </div>
+    </section>
+    <section role="tabpanel" id="panel-motion" aria-labelledby="tab-motion" hidden>
+      <div class="motion-intro"><h2>动画随你的讲解推进</h2><p>上传微调后的文件。普通页自动入场，流程与对比页分步展开，翻页由你控制。</p></div>
+      <div class="motion-workbench">
+        <aside class="motion-settings">
+          <label id="pptx-drop" class="pptx-drop" for="pptx-input"><span class="upload-symbol" aria-hidden="true">↑</span><strong id="pptx-filename">选择调整后的 PPTX</strong><span>点击选择，或将文件拖到这里</span><small>.pptx · 最大 30 MB</small><input id="pptx-input" type="file" accept=".pptx" hidden></label>
+          <h3>演讲者控制节奏</h3><p class="help-text">一步可以包含多个对象。自动步骤会接着上一步播放，点击步骤会停下来等待你操作。每页讲完后，再点击进入下一页。</p>
+          <p class="help-text">默认保留已有动画。需要修改时，选择对应页面并勾选重建本页动画。</p>
+          <button id="animate-button" class="button primary full" type="button" disabled>下载动态 PPTX</button>
+          <button id="cancel-animation-ai" class="text-button" type="button" hidden>停止 AI 优化</button>
+          <p id="animation-ai-status" class="help-text" role="status" aria-live="polite"></p>
+          <p class="help-text">导出保留文字、图片、图形和原始页数。兼容性优先，实际效果请分别在 PowerPoint 与 WPS 放映确认。</p>
+        </aside>
+        <div class="inventory-panel"><div class="panel-title"><div><h2>逐页动画步骤</h2><p id="inventory-meta">上传后自动生成可调整的讲解顺序</p></div></div><div id="inventory-empty" class="inventory-empty"><h3>等待上传 PPTX</h3><p>静态排版调整满意后，上传保存的文件。<br>这里会列出每页对象、动画步骤与点击停顿点。</p></div><div id="inventory"></div><div id="animation-report" class="animation-report" role="status" hidden></div></div>
+      </div>
+    </section>
+    <footer>llm-pptx <span>基于 PptxGenJS · 原生可编辑内容</span></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "llm-pptx",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "文本和文档生成可编辑 PPTX，人工调整后添加原生 PowerPoint 动画",
+  "engines": {
+    "node": ">=22.16"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "test": "node --test tests/acceptance.test.js tests/pipeline.test.js tests/presenter-edge.test.js tests/presenter-http.test.js tests/presenter.test.js tests/server.test.js tests/source-fidelity.test.js tests/static-design.test.js tests/streaming.test.js",
+    "check": "node --check src/server.js && node --check public/app.js && node --check public/layout.js && node --check public/steps.js && npm test",
+    "demo": "node scripts/demo.js",
+    "demo:motion": "node scripts/demo-motion.js",
+    "acceptance": "node scripts/acceptance.js",
+    "demo:presenter": "node scripts/presenter-demo.js",
+    "demo:design": "node scripts/design-demo.js",
+    "templates:compile": "node scripts/import-core-templates.js",
+    "test:legacy-cinematic": "node --test tests/cinematic.test.js"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "0.9.12",
+    "express": "5.1.0",
+    "jszip": "3.10.1",
+    "multer": "2.4.0",
+    "pdf-parse": "2.4.5",
+    "pptxgenjs": "4.0.1",
+    "zod": "4.1.12"
+  },
+  "overrides": {
+    "image-size": "2.0.4"
+  }
+}

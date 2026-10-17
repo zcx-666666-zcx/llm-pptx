@@ -1,0 +1,15 @@
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { structureText } from '../src/outline.js';
+import { generatePptx } from '../src/presentation.js';
+import { animatePptx, inspectPptx } from '../src/animation.js';
+const output = new URL('../artifacts/', import.meta.url);
+await mkdir(output, { recursive: true });
+const deck = structureText(await readFile(new URL('../examples/brief.md', import.meta.url), 'utf8'));
+const buffer = await generatePptx(deck);
+await writeFile(new URL('demo-static.pptx', output), buffer);
+const animated = await animatePptx(buffer, { effect: 'fade', trigger: 'click', duration: 500 });
+await writeFile(new URL('demo-animated.pptx', output), animated.buffer);
+const automatic = await animatePptx(buffer, { effect: 'fade', trigger: 'auto', duration: 500, stagger: 200 });
+await writeFile(new URL('demo-automatic.pptx', output), automatic.buffer);
+await writeFile(new URL('demo-report.json', output), JSON.stringify({ deck, inventory: await inspectPptx(buffer), clickReport: animated.report, automaticReport: automatic.report }, null, 2));
+console.log('已生成 artifacts/demo-static.pptx、demo-animated.pptx、demo-automatic.pptx 和 demo-report.json');
